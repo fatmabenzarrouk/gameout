@@ -1,0 +1,556 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Public gamer profile and identity record",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID matching request.auth.uid"
+        },
+        "username": {
+          "type": "string",
+          "description": "Unique gamer username handle",
+          "minLength": 3,
+          "maxLength": 30,
+          "pattern": "^[a-zA-Z0-9_]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Gamer display name",
+          "minLength": 2,
+          "maxLength": 50
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address"
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "Profile avatar image URL"
+        },
+        "coverUrl": {
+          "type": "string",
+          "description": "Cover banner image URL"
+        },
+        "tagline": {
+          "type": "string",
+          "description": "Short gamer status tagline",
+          "maxLength": 100
+        },
+        "bio": {
+          "type": "string",
+          "description": "Gamer biography",
+          "maxLength": 500
+        },
+        "level": {
+          "type": "number",
+          "description": "Gamer level"
+        },
+        "xp": {
+          "type": "number",
+          "description": "Gamer experience points"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public", "friends_only"],
+          "description": "Profile visibility"
+        },
+        "isVerified": {
+          "type": "boolean",
+          "description": "Verified status"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["userId", "username", "displayName", "email", "level", "xp", "visibility", "createdAt"]
+    },
+    "UsernameReservation": {
+      "title": "UsernameReservation",
+      "description": "Reservation mapping for unique gamer usernames",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "User UID who owns this username"
+        },
+        "username": {
+          "type": "string",
+          "description": "Reserved lowercase handle",
+          "minLength": 3,
+          "maxLength": 30
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["userId", "username", "createdAt"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Admin authorization entry",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["super_admin", "moderator"]
+        }
+      },
+      "required": ["email", "role"]
+    },
+    "Follow": {
+      "title": "Follow",
+      "description": "Follow relationship between gamers",
+      "type": "object",
+      "properties": {
+        "followerId": {
+          "type": "string"
+        },
+        "followingId": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        }
+      },
+      "required": ["followerId", "followingId", "createdAt"]
+    },
+    "Report": {
+      "title": "Report",
+      "description": "User or content report submission",
+      "type": "object",
+      "properties": {
+        "reporterId": {
+          "type": "string"
+        },
+        "targetId": {
+          "type": "string"
+        },
+        "targetType": {
+          "type": "string",
+          "enum": ["user", "post", "adventure"]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        }
+      },
+      "required": ["reporterId", "targetId", "targetType", "reason", "createdAt"]
+    },
+    "GamingExperience": {
+      "title": "GamingExperience",
+      "description": "Gaming work history timeline record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "gameTitle": { "type": "string", "maxLength": 100 },
+        "gameCover": { "type": "string" },
+        "platform": { "type": "string" },
+        "role": { "type": "string" },
+        "gameMode": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "isCurrentlyPlaying": { "type": "boolean" },
+        "hoursPlayed": { "type": "number" },
+        "experienceLevel": { "type": "string" },
+        "rank": { "type": "string" },
+        "description": { "type": "string", "maxLength": 2000 },
+        "skills": { "type": "array" },
+        "achievements": { "type": "array" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "gameTitle", "platform", "role", "startDate", "hoursPlayed", "rank"]
+    },
+    "GamingAdventure": {
+      "title": "GamingAdventure",
+      "description": "Gaming project and adventure portfolio card",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string", "maxLength": 150 },
+        "game": { "type": "string" },
+        "description": { "type": "string", "maxLength": 3000 },
+        "mediaUrl": { "type": "string" },
+        "teamMembers": { "type": "array" },
+        "tournamentParticipation": { "type": "string" },
+        "challengeCompletion": { "type": "string" },
+        "personalStory": { "type": "string", "maxLength": 3000 },
+        "date": { "type": "string" },
+        "tags": { "type": "array" },
+        "likesCount": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "title", "game", "description"]
+    },
+    "Achievement": {
+      "title": "Achievement",
+      "description": "Gamer trophy cabinet item",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "game": { "type": "string" },
+        "icon": { "type": "string" },
+        "rarity": {
+          "type": "string",
+          "enum": ["Common", "Rare", "Epic", "Legendary"]
+        },
+        "unlockDate": { "type": "string" },
+        "xpReward": { "type": "number" },
+        "isUnlocked": { "type": "boolean" },
+        "isSelfReported": { "type": "boolean" },
+        "progressPercentage": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "title", "game", "rarity", "xpReward", "isUnlocked"]
+    },
+    "FriendRequest": {
+      "title": "FriendRequest",
+      "description": "Mutual gaming connection request",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "accepted", "rejected", "cancelled"]
+        },
+        "note": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["senderId", "receiverId", "status", "createdAt"]
+    },
+    "Game": {
+      "title": "Game",
+      "description": "Catalog item in explore directory",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 150 },
+        "slug": { "type": "string" },
+        "coverUrl": { "type": "string" },
+        "bannerUrl": { "type": "string" },
+        "description": { "type": "string", "maxLength": 3000 },
+        "genre": { "type": "string" },
+        "platforms": { "type": "array" },
+        "releaseYear": { "type": "number" },
+        "developer": { "type": "string" },
+        "rating": { "type": "number" },
+        "popularity": { "type": "number" },
+        "activePlayersCount": { "type": "string" }
+      },
+      "required": ["title", "slug", "genre", "platforms"]
+    },
+    "Community": {
+      "title": "Community",
+      "description": "Game hub community and player guild",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "gameTitle": { "type": "string" },
+        "description": { "type": "string", "maxLength": 1000 },
+        "avatarUrl": { "type": "string" },
+        "creatorId": { "type": "string" },
+        "membersCount": { "type": "number" },
+        "isVerified": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["name", "gameTitle", "creatorId", "membersCount"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "Gaming social network feed post",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorUsername": { "type": "string" },
+        "authorAvatarUrl": { "type": "string" },
+        "authorVerified": { "type": "boolean" },
+        "content": { "type": "string", "maxLength": 5000 },
+        "mediaUrl": { "type": "string" },
+        "mediaType": { "type": "string", "enum": ["image", "video", "clip", "achievement", "custom_banner"] },
+        "gameTag": { "type": "string" },
+        "tags": { "type": "array" },
+        "postType": { "type": "string", "enum": ["status", "photo", "clip", "achievement", "adventure", "moment"] },
+        "badgeTitle": { "type": "string", "maxLength": 150 },
+        "visibility": { "type": "string", "enum": ["public", "friends_only"] },
+        "likesCount": { "type": "number" },
+        "commentsCount": { "type": "number" },
+        "sharesCount": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "editedAt": { "type": "string" }
+      },
+      "required": ["authorId", "content", "createdAt"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "Social reply or comment on a post",
+      "type": "object",
+      "properties": {
+        "postId": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorUsername": { "type": "string" },
+        "authorAvatarUrl": { "type": "string" },
+        "authorVerified": { "type": "boolean" },
+        "content": { "type": "string", "maxLength": 2000 },
+        "parentId": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "editedAt": { "type": "string" },
+        "likesCount": { "type": "number" }
+      },
+      "required": ["postId", "authorId", "content", "createdAt"]
+    },
+    "Like": {
+      "title": "Like",
+      "description": "Post or comment reaction by a gamer",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "targetId": { "type": "string" },
+        "targetType": { "type": "string", "enum": ["post", "comment"] },
+        "reactionType": { "type": "string", "enum": ["like", "heart", "fire"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "targetId", "createdAt"]
+    },
+    "SavedPost": {
+      "title": "SavedPost",
+      "description": "Bookmarked post record for a gamer",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "postId": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "postId", "createdAt"]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Private direct or group gaming messaging conversation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["direct", "group"] },
+        "name": { "type": "string", "maxLength": 100 },
+        "avatarUrl": { "type": "string" },
+        "gameTag": { "type": "string" },
+        "participantIds": { "type": "array" },
+        "participants": { "type": "array" },
+        "creatorId": { "type": "string" },
+        "adminIds": { "type": "array" },
+        "lastMessage": { "type": "string", "maxLength": 2000 },
+        "lastMessageSenderId": { "type": "string" },
+        "lastMessageTime": { "type": "string" },
+        "unreadCounts": { "type": "object" },
+        "readBy": { "type": "array" },
+        "updatedAt": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["participantIds", "lastMessage", "updatedAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Individual chat message inside a conversation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "conversationId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "senderUsername": { "type": "string" },
+        "senderAvatar": { "type": "string" },
+        "text": { "type": "string", "maxLength": 5000 },
+        "timestamp": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "isRead": { "type": "boolean" },
+        "readBy": { "type": "array" }
+      },
+      "required": ["conversationId", "senderId", "text", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Real-time user notification event",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "recipientId": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["like", "comment", "reply", "friend_request", "friend_request_accepted", "follow", "achievement", "message", "mention"]
+        },
+        "actor": { "type": "object" },
+        "content": { "type": "string", "maxLength": 500 },
+        "targetId": { "type": "string" },
+        "targetType": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "isRead": { "type": "boolean" }
+      },
+      "required": ["recipientId", "type", "content", "createdAt"]
+    },
+    "Block": {
+      "title": "Block",
+      "description": "User block record to restrict communication and social interactions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "blockerId": { "type": "string" },
+        "blockedId": { "type": "string" },
+        "blockedUsername": { "type": "string" },
+        "blockedDisplayName": { "type": "string" },
+        "blockedAvatarUrl": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["blockerId", "blockedId", "createdAt"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Administrative audit trail event",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "adminId": { "type": "string" },
+        "adminEmail": { "type": "string" },
+        "action": { "type": "string" },
+        "targetId": { "type": "string" },
+        "targetType": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["adminId", "action", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "Gamer profiles accessible publicly with write restricted to document owner"
+    },
+    "/usernames/{username}": {
+      "schema": {
+        "$ref": "#/entities/UsernameReservation"
+      },
+      "description": "Username reservation to prevent duplicate handles"
+    },
+    "/admins/{userId}": {
+      "schema": {
+        "$ref": "#/entities/Admin"
+      },
+      "description": "Whitelisted administrator accounts"
+    },
+    "/follows/{followId}": {
+      "schema": {
+        "$ref": "#/entities/Follow"
+      },
+      "description": "Gamer follow relationships"
+    },
+    "/reports/{reportId}": {
+      "schema": {
+        "$ref": "#/entities/Report"
+      },
+      "description": "User or content moderation reports"
+    },
+    "/gamingExperiences/{experienceId}": {
+      "schema": {
+        "$ref": "#/entities/GamingExperience"
+      },
+      "description": "Gaming work history timeline records"
+    },
+    "/gamingAdventures/{adventureId}": {
+      "schema": {
+        "$ref": "#/entities/GamingAdventure"
+      },
+      "description": "Gaming adventure and project cards"
+    },
+    "/achievements/{achievementId}": {
+      "schema": {
+        "$ref": "#/entities/Achievement"
+      },
+      "description": "Trophy cabinet entries with rarity and XP rewards"
+    },
+    "/friendRequests/{requestId}": {
+      "schema": {
+        "$ref": "#/entities/FriendRequest"
+      },
+      "description": "Mutual connection requests"
+    },
+    "/games/{gameId}": {
+      "schema": {
+        "$ref": "#/entities/Game"
+      },
+      "description": "Explore games directory catalog"
+    },
+    "/communities/{communityId}": {
+      "schema": {
+        "$ref": "#/entities/Community"
+      },
+      "description": "Gaming communities and guilds"
+    },
+    "/posts/{postId}": {
+      "schema": {
+        "$ref": "#/entities/Post"
+      },
+      "description": "Gaming feed posts readable publicly, writable by author or counter increments"
+    },
+    "/comments/{commentId}": {
+      "schema": {
+        "$ref": "#/entities/Comment"
+      },
+      "description": "Social comments and replies on posts"
+    },
+    "/likes/{likeId}": {
+      "schema": {
+        "$ref": "#/entities/Like"
+      },
+      "description": "Gamer reactions on posts and comments"
+    },
+    "/savedPosts/{saveId}": {
+      "schema": {
+        "$ref": "#/entities/SavedPost"
+      },
+      "description": "Bookmarked posts private to user"
+    },
+    "/conversations/{conversationId}": {
+      "schema": {
+        "$ref": "#/entities/Conversation"
+      },
+      "description": "Direct and group gaming conversations accessible only to participating gamers"
+    },
+    "/conversations/{conversationId}/messages/{messageId}": {
+      "schema": {
+        "$ref": "#/entities/Message"
+      },
+      "description": "Real-time messages belonging to conversation participants"
+    },
+    "/notifications/{notificationId}": {
+      "schema": {
+        "$ref": "#/entities/Notification"
+      },
+      "description": "Personal activity notifications readable and managed only by the recipient"
+    },
+    "/blocks/{blockId}": {
+      "schema": {
+        "$ref": "#/entities/Block"
+      },
+      "description": "User block records enforced to prevent unwanted communication"
+    },
+    "/auditLogs/{logId}": {
+      "schema": {
+        "$ref": "#/entities/AuditLog"
+      },
+      "description": "Audit trail entries recording all administrative and moderation events"
+    }
+  }
+}

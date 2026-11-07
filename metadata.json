@@ -1,0 +1,8 @@
+{
+  "name": "Remix GameOut - Gaming Social Network",
+  "description": "Your Gaming Life. Your Identity. Your Community. The professional social network built exclusively for gamers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,262 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny catch-all (Pillar 1)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Security Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (request.auth.token.email == 'fatmazarrouk01@gmail.com' && request.auth.token.email_verified == true)
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUsername(username) {
+      return username is string && username.size() >= 3 && username.size() <= 30 && username.matches('^[a-zA-Z0-9_]+$');
+    }
+
+    // 1. Users Collection
+    // Enforces: Identity integrity, prevents self-awarding verified badge or self-unbanning
+    match /users/{userId} {
+      allow get: if true;
+      allow list: if isSignedIn();
+      allow create: if isOwner(userId)
+                    && isValidId(userId)
+                    && request.resource.data.userId == request.auth.uid
+                    && isValidUsername(request.resource.data.username)
+                    && (!('isVerified' in request.resource.data) || request.resource.data.isVerified == false)
+                    && (!('isSuspended' in request.resource.data) || request.resource.data.isSuspended == false);
+      allow update: if (isOwner(userId)
+                        && request.resource.data.userId == request.auth.uid
+                        && request.resource.data.createdAt == resource.data.createdAt
+                        && request.resource.data.isVerified == resource.data.isVerified
+                        && (!('isSuspended' in resource.data) || request.resource.data.isSuspended == resource.data.isSuspended)
+                        && (!('suspendedReason' in resource.data) || request.resource.data.suspendedReason == resource.data.suspendedReason))
+                    || isAdmin();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // 2. Username Reservations
+    // Guarantees handle uniqueness and blocks handle-squatting
+    match /usernames/{username} {
+      allow get: if true;
+      allow list: if isSignedIn();
+      allow create: if isSignedIn()
+                    && isValidUsername(username)
+                    && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn()
+                            && resource.data.userId == request.auth.uid;
+    }
+
+    // 3. Admins Directory
+    match /admins/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // 4. Follows Collection (anti-self-follow)
+    match /follows/{followId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+                    && request.resource.data.followerId == request.auth.uid
+                    && request.resource.data.followerId != request.resource.data.followingId;
+      allow delete: if isSignedIn()
+                    && resource.data.followerId == request.auth.uid;
+    }
+
+    // 5. Reports Collection (Moderation)
+    // Non-admins can only create with pending status; resolution strictly reserved for admins
+    match /reports/{reportId} {
+      allow create: if isSignedIn()
+                    && request.resource.data.reporterId == request.auth.uid
+                    && request.resource.data.status == 'pending';
+      allow read, update, delete: if isAdmin();
+    }
+
+    // 6. User Blocks Collection
+    match /blocks/{blockId} {
+      allow read: if isSignedIn() && (resource.data.blockerId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn()
+                    && request.resource.data.blockerId == request.auth.uid
+                    && request.resource.data.blockerId != request.resource.data.blockedId;
+      allow delete: if isSignedIn() && (resource.data.blockerId == request.auth.uid || isAdmin());
+    }
+
+    // 7. Admin Audit Logs (Tamper-evident, strictly append-only by admins, no edits or deletions)
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && request.resource.data.adminId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // 8. Gaming Experiences (Ownership-guarded)
+    match /gamingExperiences/{experienceId} {
+      allow read: if true;
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn()
+                    && resource.data.userId == request.auth.uid
+                    && request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn()
+                    && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // 9. Gaming Adventures (Ownership-guarded, like counters allowlist)
+    match /gamingAdventures/{adventureId} {
+      allow read: if true;
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn()
+                    && ((resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid)
+                        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likesCount'])
+                        || isAdmin());
+      allow delete: if isSignedIn()
+                    && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // 10. Game Achievements (Trophy Cabinet)
+    match /achievements/{achievementId} {
+      allow read: if true;
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn()
+                    && resource.data.userId == request.auth.uid
+                    && request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn()
+                    && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // 11. Friend Requests (Bilateral access only, anti-self-request)
+    match /friendRequests/{requestId} {
+      allow read: if isSignedIn()
+                  && (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn()
+                    && request.resource.data.senderId == request.auth.uid
+                    && request.resource.data.senderId != request.resource.data.receiverId;
+      allow update: if isSignedIn()
+                    && (resource.data.receiverId == request.auth.uid || resource.data.senderId == request.auth.uid)
+                    && request.resource.data.senderId == resource.data.senderId
+                    && request.resource.data.receiverId == resource.data.receiverId;
+      allow delete: if isSignedIn()
+                    && (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid || isAdmin());
+    }
+
+    // 12. Games Catalog (Read public, write admin-only)
+    match /games/{gameId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 13. Gaming Communities
+    match /communities/{communityId} {
+      allow read: if true;
+      allow create: if isSignedIn()
+                    && request.resource.data.creatorId == request.auth.uid;
+      allow update: if isSignedIn()
+                    && ((resource.data.creatorId == request.auth.uid && request.resource.data.creatorId == request.auth.uid)
+                        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['membersCount', 'isJoined'])
+                        || isAdmin());
+      allow delete: if isSignedIn()
+                    && (resource.data.creatorId == request.auth.uid || isAdmin());
+    }
+
+    // 14. Gaming Feed Posts (Author-controlled, engagement counters allowlist)
+    match /posts/{postId} {
+      allow read: if true;
+      allow create: if isSignedIn()
+                    && request.resource.data.authorId == request.auth.uid;
+      allow update: if isSignedIn()
+                    && ((resource.data.authorId == request.auth.uid && request.resource.data.authorId == request.auth.uid)
+                        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likesCount', 'heartsCount', 'firesCount', 'commentsCount', 'sharesCount'])
+                        || isAdmin());
+      allow delete: if isSignedIn()
+                    && (resource.data.authorId == request.auth.uid || isAdmin());
+    }
+
+    // 15. Post Comments & Replies
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if isSignedIn()
+                    && request.resource.data.authorId == request.auth.uid;
+      allow update: if isSignedIn()
+                    && ((resource.data.authorId == request.auth.uid && request.resource.data.authorId == request.auth.uid)
+                        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likesCount'])
+                        || isAdmin());
+      allow delete: if isSignedIn()
+                    && (resource.data.authorId == request.auth.uid || isAdmin());
+    }
+
+    // 16. Post Reactions & Likes
+    match /likes/{likeId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn()
+                    && resource.data.userId == request.auth.uid;
+    }
+
+    // 17. Saved Posts (Private bookmarks)
+    match /savedPosts/{saveId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn()
+                    && resource.data.userId == request.auth.uid;
+    }
+
+    // 18. Real-Time Conversations (Direct & Group)
+    // Strictly limited to participants only. No unauthorized snooping.
+    match /conversations/{conversationId} {
+      allow get, list: if isSignedIn() && (request.auth.uid in resource.data.participantIds || isAdmin());
+      allow create: if isSignedIn() && (request.auth.uid in request.resource.data.participantIds);
+      allow update: if isSignedIn() && (request.auth.uid in resource.data.participantIds || isAdmin());
+      allow delete: if isSignedIn() && (resource.data.creatorId == request.auth.uid || isAdmin());
+
+      // Subcollection for conversation messages
+      // Only participants can read and send; editing restricted to message author; read-receipts allowlist
+      match /messages/{messageId} {
+        allow read: if isSignedIn()
+                    && (request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds || isAdmin());
+        allow create: if isSignedIn()
+                      && (request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds)
+                      && request.resource.data.senderId == request.auth.uid;
+        allow update: if isSignedIn()
+                      && (request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds)
+                      && ((resource.data.senderId == request.auth.uid && request.resource.data.senderId == request.auth.uid)
+                          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead', 'readBy']));
+        allow delete: if isSignedIn()
+                      && (resource.data.senderId == request.auth.uid || isAdmin());
+      }
+    }
+
+    // 19. Real-Time Notifications
+    // Recipient-isolated. Cannot spam self or inspect others' notifications.
+    match /notifications/{notificationId} {
+      allow get, list: if isSignedIn() && resource.data.recipientId == request.auth.uid;
+      allow create: if isSignedIn()
+                    && request.resource.data.recipientId is string
+                    && request.resource.data.recipientId != request.auth.uid;
+      allow update: if isSignedIn()
+                    && resource.data.recipientId == request.auth.uid
+                    && request.resource.data.recipientId == resource.data.recipientId;
+      allow delete: if isSignedIn()
+                    && resource.data.recipientId == request.auth.uid;
+    }
+  }
+}

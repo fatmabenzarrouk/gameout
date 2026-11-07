@@ -1,0 +1,61 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Global default-deny
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidImage() {
+      return request.resource.contentType.matches('image/(jpeg|png|webp|gif)')
+             && request.resource.size <= 15 * 1024 * 1024; // 15MB max
+    }
+
+    function isValidVideo() {
+      return request.resource.contentType.matches('video/(mp4|webm|quicktime|ogg)')
+             && request.resource.size <= 50 * 1024 * 1024; // 50MB max
+    }
+
+    function isValidMedia() {
+      return isValidImage() || isValidVideo();
+    }
+
+    // 1. User Profile Media (Avatars & Covers)
+    match /users/{userId}/{mediaFile} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isValidMedia();
+      allow delete: if isOwner(userId);
+    }
+
+    // 2. Feed Post Media & Clips
+    match /posts/{postId}/{mediaFile} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidMedia();
+      allow delete: if isSignedIn();
+    }
+
+    // 3. Gaming Adventures Media
+    match /adventures/{adventureId}/{mediaFile} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidMedia();
+      allow delete: if isSignedIn();
+    }
+
+    // 4. Achievement Badges & Icons
+    match /achievements/{achievementId}/{mediaFile} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidImage();
+      allow delete: if isSignedIn();
+    }
+  }
+}

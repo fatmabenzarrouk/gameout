@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --gameout-blue: #1768df;
+    --gameout-navy: #10234a;
+    --gameout-bg: #f4f6fc;
+    --gameout-card: #ffffff;
+    --gameout-text: #172033;
+    --gameout-muted: #697386;
+    --gameout-border: #e4e9f2;
+    --gameout-success: #16a36a;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--gameout-bg);
+    color: var(--gameout-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Custom scrollbar for desktop feed and chat */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Subtle glitch effect for special gamer status badges and cyber mode */
+@keyframes cyber-glitch {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 1px) skewX(-1deg); }
+  40% { transform: translate(-1px, -2px) skewX(2deg); }
+  60% { transform: translate(2px, 1px) skewX(-2deg); }
+  80% { transform: translate(1px, -1px) skewX(1deg); }
+  100% { transform: translate(0); }
+}
+
+@keyframes screen-tear {
+  0% { clip-path: inset(0 0 0 0); }
+  15% { clip-path: inset(18% 0 72% 0); transform: translate(-3px, 1px); }
+  30% { clip-path: inset(64% 0 16% 0); transform: translate(3px, -1px); }
+  45% { clip-path: inset(32% 0 54% 0); transform: translate(-2px, 0); }
+  60% { clip-path: inset(82% 0 5% 0); transform: translate(2px, 1px); }
+  75% { clip-path: inset(40% 0 45% 0); transform: translate(-1px, -1px); }
+  100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+}
+
+@keyframes scanline-scroll {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100%; }
+}
+
+.glitch-hover:hover {
+  animation: cyber-glitch 0.22s steps(2, start) infinite alternate;
+}
+
+.glitch-tear-active {
+  animation: screen-tear 1.8s steps(4) infinite;
+}
+
+/* Jarring Cyan vs Magenta chromatic aberration text */
+.glitch-chroma {
+  text-shadow: -1.5px -1.5px 0 #00f0ff, 1.5px 1.5px 0 #ff007f;
+}
+
+/* Jarring Cyan vs Magenta dual border */
+.glitch-box {
+  box-shadow: -2px 0 0 #00f0ff, 2px 0 0 #ff007f;
+}
+
+.glitch-box-lg {
+  box-shadow: -3px -2px 0 #00f0ff, 3px 2px 0 #ff007f;
+}
+
+/* Screen scanline effect overlay */
+.scanlines-overlay {
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.15) 50%
+  ), linear-gradient(
+    90deg,
+    rgba(0, 240, 255, 0.03),
+    rgba(255, 0, 127, 0.02),
+    rgba(0, 240, 255, 0.03)
+  );
+  background-size: 100% 3px, 6px 100%;
+  pointer-events: none;
+}
+
+/* Raw pixel monospace font styling */
+.font-pixel {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  letter-spacing: -0.04em;
+}
+
